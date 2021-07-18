@@ -1,0 +1,8 @@
+spdlog
+torch
+torchcde
+numpy
+pandas
+torchtuples
+scikit-learn
+pycox
