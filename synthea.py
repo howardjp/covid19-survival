@@ -74,7 +74,13 @@ def get_data(logger, file_name):
 
 
 def make_model(logger, file_name, output_name, model_type="coxcc", batch_size=256, max_epochs=10,
-               interpolation="cubic", verbose=False):
+               interpolation="cubic", verbose=False, device="cuda"):
+    if device == "cuda":
+        torch.set_default_tensor_type('torch.cuda.FloatTensor')
+    else:
+        torch.set_default_tensor_type('torch.FloatTensor')
+    logger.info(f'Using device {device} for PyTorch processing')
+
     trn_array, tst_array, val_array, id_list = get_data(logger, file_name)
     x_trn_array, y_trn_array = trn_array
     x_tst_array, y_tst_array = tst_array

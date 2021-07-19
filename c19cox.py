@@ -60,12 +60,6 @@ def main():
             opts["device"] = "cuda"
         else:
             opts["device"] = "cpu"
-    console.info(f'Using device {opts["device"]} for PyTorch processing')
-
-    if opts["device"] == "cuda":
-        torch.set_default_tensor_type('torch.cuda.FloatTensor')
-    else:
-        torch.set_default_tensor_type('torch.FloatTensor')
 
     console.info(f'Setting the PyTorch seed to {opts["seed"]}')
     torch.manual_seed(opts["seed"])
@@ -74,7 +68,7 @@ def main():
     console.info(f'Starting time series classification with maximum epochs of {opts["maxepochs"]}')
     synthea.make_model(console, file_name=opts["data"], output_name=opts["name"], model_type=opts["type"],
                        batch_size=opts["batchsize"], max_epochs=opts["maxepochs"], verbose=opts["verbose"],
-                       interpolation=opts["interp"])
+                       interpolation=opts["interp"], device=opts["device"])
 
 
 if __name__ == "__main__":
