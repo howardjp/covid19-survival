@@ -12,6 +12,6 @@ log_level_map = {"trace": spdlog.LogLevel.TRACE,
                  "off": spdlog.LogLevel.OFF}
 
 info_banner = "James Howard's ACM Thesis Project"
-app_name = os.path.basename(__file__)
+app_name = "c19cox"
 
 logger = spdlog.ConsoleLogger(app_name)

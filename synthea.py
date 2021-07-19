@@ -42,15 +42,15 @@ def get_data_by_patient(patient_idx, covid19_data):
     return x_array, y_array
 
 
-def get_data(file_name, n = None):
+def get_data(file_name, n=None):
     logger.trace(f'Opening file {file_name}')
     with bz2.open(file_name, 'rt', encoding="utf-8") as f:
         covid19_data = json.load(f)
 
     patient_ids_idx = covid19_data['info'].keys()
-    if n is None:
+    if n is not None:
         logger.info(f"Selecting {n} patients at random as the patient dataset for training, validation, and testing")
-        patient_ids_idx, _ = train_test_split([*patient_ids_idx], test_size=n)
+        patient_ids_idx, _ = train_test_split([*patient_ids_idx], train_size=n)
     patient_trn_idx, patient_tst_idx = train_test_split([*patient_ids_idx], test_size=0.20)
     patient_trn_idx, patient_val_idx = train_test_split(patient_trn_idx, test_size=0.20)
 
