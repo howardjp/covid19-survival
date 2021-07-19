@@ -11,10 +11,10 @@ import torchcde
 
 import synthea
 
-infoBanner = "James Howard's ACM Thesis Project"
-appName = os.path.basename(__file__)
+info_banner = "James Howard's ACM Thesis Project"
+app_name = os.path.basename(__file__)
 
-console = spdlog.ConsoleLogger(appName)
+console = spdlog.ConsoleLogger(app_name)
 log_level_map = {"trace": spdlog.LogLevel.TRACE, "debug": spdlog.LogLevel.DEBUG, "info": spdlog.LogLevel.INFO,
                  "warn": spdlog.LogLevel.WARN, "err": spdlog.LogLevel.ERR, "critical": spdlog.LogLevel.CRITICAL,
                  "off": spdlog.LogLevel.OFF}
@@ -47,7 +47,7 @@ def main():
 
     python_version = sys.version.replace('\n', '')
     version_string = f'Python {python_version}, {torch.__name__} {torch.__version__}, {torchcde.__name__} {torchcde.__version__}'
-    console.info(f'{infoBanner}, {appName}')
+    console.info(f'{info_banner}, {app_name}')
     console.info(version_string)
     if opts["version"]:
         sys.exit()
