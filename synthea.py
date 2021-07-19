@@ -141,7 +141,8 @@ def make_model(logger, file_name, output_name, model_type="coxcc", batch_size=25
         learning_rate_tolerance = 2
 
     logger.debug(f'Starting search for optimal learning rate...')
-    learning_rate_finder = model.lr_finder(x_trn_array, y_trn_array, batch_size, tolerance=learning_rate_tolerance)
+    learning_rate_finder = model.lr_finder(x_trn_array, y_trn_array, batch_size, tolerance=learning_rate_tolerance,
+                                           shuffle=False)
     best_lr = learning_rate_finder.get_best_lr()
     if best_lr > 0.01:
         logger.info(f"Best learning rate found is {best_lr}, using 0.01")
@@ -152,7 +153,7 @@ def make_model(logger, file_name, output_name, model_type="coxcc", batch_size=25
 
     callbacks = [tt.cb.EarlyStopping()]
     logger.debug("Starting model fit")
-    log = model.fit(x_trn_array, y_trn_array, batch_size, max_epochs, callbacks, verbose, val_data=val)
+    log = model.fit(x_trn_array, y_trn_array, batch_size, max_epochs, callbacks, verbose, val_data=val, shuffle=False)
     logger.info(f"Minimum validation loss: {log.to_pandas().val_loss.min()}")
     logger.info(f"Loss in batches: {model.score_in_batches(val)}")
     output_name = str(output_name)
