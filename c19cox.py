@@ -15,9 +15,9 @@ infoBanner = "James Howard's ACM Thesis Project"
 appName = os.path.basename(__file__)
 
 console = spdlog.ConsoleLogger(appName)
-logLevelMap = {"trace": spdlog.LogLevel.TRACE, "debug": spdlog.LogLevel.DEBUG, "info": spdlog.LogLevel.INFO,
-               "warn": spdlog.LogLevel.WARN, "err": spdlog.LogLevel.ERR, "critical": spdlog.LogLevel.CRITICAL,
-               "off": spdlog.LogLevel.OFF}
+log_level_map = {"trace": spdlog.LogLevel.TRACE, "debug": spdlog.LogLevel.DEBUG, "info": spdlog.LogLevel.INFO,
+                 "warn": spdlog.LogLevel.WARN, "err": spdlog.LogLevel.ERR, "critical": spdlog.LogLevel.CRITICAL,
+                 "off": spdlog.LogLevel.OFF}
 
 
 def main():
@@ -45,18 +45,18 @@ def main():
     parser.add_argument('--version', action='store_true', default=False, help='display version information and quit')
     opts = vars(parser.parse_args())
 
-    pyver = sys.version.replace('\n', '')
-    versionString = f'Python {pyver}, {torch.__name__} {torch.__version__}, {torchcde.__name__} {torchcde.__version__}'
+    python_version = sys.version.replace('\n', '')
+    version_string = f'Python {python_version}, {torch.__name__} {torch.__version__}, {torchcde.__name__} {torchcde.__version__}'
     console.info(f'{infoBanner}, {appName}')
-    console.info(versionString)
-    if opts["version"] == True:
+    console.info(version_string)
+    if opts["version"]:
         sys.exit()
 
-    console.set_level(logLevelMap[opts["loglevel"]])
+    console.set_level(log_level_map[opts["loglevel"]])
     console.debug(f'Console logging level {opts["loglevel"]}')
 
-    if opts["device"] == None:
-        if torch.cuda.is_available() == True:
+    if opts["device"] is None:
+        if torch.cuda.is_available():
             opts["device"] = "cuda"
         else:
             opts["device"] = "cpu"

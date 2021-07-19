@@ -109,10 +109,10 @@ def make_model(logger, file_name, output_name, model_type="coxcc", batch_size=25
     get_target = lambda df: (df[:, 0], df[:, 1])
     if model_type == 'pchazard':
         num_durations = 10
-        labtrans = PCHazard.label_transform(num_durations)
-        y_trn_array = labtrans.fit_transform(*get_target(y_trn_array))
-        y_val_array = labtrans.transform(*get_target(y_val_array))
-        out_features = labtrans.out_features
+        label_transform = PCHazard.label_transform(num_durations)
+        y_trn_array = label_transform.fit_transform(*get_target(y_trn_array))
+        y_val_array = label_transform.transform(*get_target(y_val_array))
+        out_features = label_transform.out_features
     else:
         y_trn_array = get_target(y_trn_array)
         y_val_array = get_target(y_val_array)
@@ -131,18 +131,18 @@ def make_model(logger, file_name, output_name, model_type="coxcc", batch_size=25
                            interpolation=interpolation)
 
     if model_type == 'pchazard':
-        model = PCHazard(net, tt.optim.Adam, duration_index=labtrans.cuts)
-        lr_tolerance = 8
+        model = PCHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
+        learning_rate_tolerance = 8
     elif model_type == 'coxph':
         model = CoxPH(net, tt.optim.Adam)
-        lr_tolerance = 10
+        learning_rate_tolerance = 10
     else:
         model = CoxCC(net, tt.optim.Adam)
-        lr_tolerance = 2
+        learning_rate_tolerance = 2
 
     logger.debug(f'Starting search for optimal learning rate...')
-    lr_finder = model.lr_finder(x_trn_array, y_trn_array, batch_size, tolerance=lr_tolerance)
-    best_lr = lr_finder.get_best_lr()
+    learning_rate_finder = model.lr_finder(x_trn_array, y_trn_array, batch_size, tolerance=learning_rate_tolerance)
+    best_lr = learning_rate_finder.get_best_lr()
     if best_lr > 0.01:
         logger.info(f"Best learning rate found is {best_lr}, using 0.01")
         best_lr = 0.01
