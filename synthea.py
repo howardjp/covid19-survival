@@ -6,7 +6,6 @@ import pandas as pd
 import torch
 import torchcde
 import torchtuples as tt
-import spdlog
 
 import c19ode
 
@@ -15,22 +14,13 @@ from sklearn.model_selection import train_test_split
 from pycox.models import CoxCC, CoxPH, PCHazard
 
 
-def get_data(logger, file_name):
-    logger.trace(f'Opening file {file_name}')
-    with bz2.open(file_name, 'rt', encoding="utf-8") as f:
-        covid19_data = json.load(f)
+def get_data_by_patient(logger, patient_idx, covid19_data):
+    observation_trn_id = []
+    for patient_id in sorted(patient_idx):
+        observation_trn_id.extend([*covid19_data['info'][patient_id].keys()])
 
     time_index = covid19_data['time_index']
     time_index_df = pd.DataFrame({'time_index': time_index})
-
-    patient_ids_idx = covid19_data['info'].keys()
-    patient_trn_idx, patient_tst_idx = train_test_split([*patient_ids_idx], test_size=0.20)
-    patient_trn_idx, patient_val_idx = train_test_split(patient_trn_idx, test_size=0.20)
-
-    logger.debug(f'Collecting training observation data...')
-    observation_trn_id = []
-    for patient_id in sorted(patient_trn_idx):
-        observation_trn_id.extend([*covid19_data['info'][patient_id].keys()])
 
     x_array = []
     y_array = []
@@ -48,74 +38,47 @@ def get_data(logger, file_name):
         x = pd.concat([pd.DataFrame(time_index), pd.DataFrame(x), pd.DataFrame(x_mask.numpy())], axis=1).to_numpy()
         x_array.append(x)
 
-    y_trn_array = torch.Tensor(y_array)
-    x_trn_array = torch.Tensor(x_array)
+    x_array = torch.Tensor(x_array)
+    y_array = torch.Tensor(y_array)
 
-    logger.debug(f'x_trn_array size: {x_trn_array.size()}')
-    logger.debug(f'y_trn_array size: {y_trn_array.size()}')
+    logger.debug(f'x_trn_array size: {x_array.size()}')
+    logger.debug(f'y_trn_array size: {y_array.size()}')
+
+    return x_array, y_array
+
+
+def get_data(logger, file_name):
+    logger.trace(f'Opening file {file_name}')
+    with bz2.open(file_name, 'rt', encoding="utf-8") as f:
+        covid19_data = json.load(f)
+
+    patient_ids_idx = covid19_data['info'].keys()
+    patient_trn_idx, patient_tst_idx = train_test_split([*patient_ids_idx], test_size=0.20)
+    patient_trn_idx, patient_val_idx = train_test_split(patient_trn_idx, test_size=0.20)
+
+    logger.debug(f'Collecting training observation data...')
+    x_trn_array, y_trn_array = get_data_by_patient(logger, patient_trn_idx, covid19_data)
 
     logger.debug(f'Collecting testing observation data...')
-    observation_tst_id = []
-    for patient_id in sorted(patient_tst_idx):
-        observation_tst_id.extend([*covid19_data['info'][patient_id].keys()])
-
-    x_array = []
-    y_array = []
-
-    for observation_id in sorted(observation_tst_id):
-        logger.trace(f'Reading information for observation {observation_id}')
-        duration = covid19_data['outcome'][observation_id]['time']
-        event = covid19_data['outcome'][observation_id]['outcome']
-        y_array.append([duration, event])
-        x = pd.DataFrame(covid19_data['data'][observation_id]).fillna(value=np.nan)
-        x = pd.merge_ordered(time_index_df, x, left_on='time_index', right_on=0, fill_method=None)
-        x = x.drop(['time_index', 0], axis=1)
-        x = x.to_numpy()
-        x_mask = (~torch.isnan(torch.Tensor(x))).cumsum(dim=0).cpu()
-        x = pd.concat([pd.DataFrame(time_index), pd.DataFrame(x), pd.DataFrame(x_mask.numpy())], axis=1).to_numpy()
-        x_array.append(x)
-
-    y_tst_array = torch.Tensor(y_array)
-    x_tst_array = torch.Tensor(x_array)
-
-    logger.debug(f'x_tst_array size: {x_tst_array.size()}')
-    logger.debug(f'y_tst_array size: {y_tst_array.size()}')
+    x_tst_array, y_tst_array = get_data_by_patient(logger, patient_tst_idx, covid19_data)
 
     logger.debug(f'Collecting validation observation data...')
-    observation_val_id = []
-    for patient_id in sorted(patient_val_idx):
-        observation_val_id.extend([*covid19_data['info'][patient_id].keys()])
-
-    for observation_id in sorted(observation_val_id):
-        logger.trace(f'Reading information for observation {observation_id}')
-        duration = covid19_data['outcome'][observation_id]['time']
-        event = covid19_data['outcome'][observation_id]['outcome']
-        y_array.append([duration, event])
-        x = pd.DataFrame(covid19_data['data'][observation_id]).fillna(value=np.nan)
-        x = pd.merge_ordered(time_index_df, x, left_on='time_index', right_on=0, fill_method=None)
-        x = x.drop(['time_index', 0], axis=1)
-        x = x.to_numpy()
-        x_mask = (~torch.isnan(torch.Tensor(x))).cumsum(dim=0).cpu()
-        x = pd.concat([pd.DataFrame(time_index), pd.DataFrame(x), pd.DataFrame(x_mask.numpy())], axis=1).to_numpy()
-        x_array.append(x)
-
-    y_val_array = torch.Tensor(y_array)
-    x_val_array = torch.Tensor(x_array)
-
-    logger.debug(f'x_val_array size: {x_val_array.size()}')
-    logger.debug(f'y_val_array size: {y_val_array.size()}')
+    x_val_array, y_val_array = get_data_by_patient(logger, patient_val_idx, covid19_data)
 
     id_list = dict()
     id_list["training_patient_ids"] = patient_trn_idx
     id_list["testing_patient_ids"] = patient_tst_idx
     id_list["validation_patient_ids"] = patient_val_idx
 
-    return x_trn_array, y_trn_array, x_tst_array, y_tst_array, x_val_array, y_val_array, id_list
+    return (x_trn_array, y_trn_array), (x_tst_array, y_tst_array), (x_val_array, y_val_array), id_list
 
 
 def make_model(logger, file_name, output_name, model_type="coxcc", batch_size=256, max_epochs=10,
                interpolation="cubic", verbose=False):
-    x_trn_array, y_trn_array, x_tst_array, y_tst_array, x_val_array, y_val_array, id_list = get_data(logger, file_name)
+    trn_array, tst_array, val_array, id_list = get_data(logger, file_name)
+    x_trn_array, y_trn_array = trn_array
+    x_tst_array, y_tst_array = tst_array
+    x_val_array, y_val_array = val_array
     x1, x2, x3 = x_trn_array.size()
 
     logger.debug(f'Starting initial interpolation using method {interpolation}')
@@ -134,7 +97,7 @@ def make_model(logger, file_name, output_name, model_type="coxcc", batch_size=25
         logger.info(f'Starting interpolation on testing dataset')
         x_tst_array = torchcde.natural_cubic_coeffs(x_tst_array)
     logger.debug(f'Completed initial interpolation')
-    
+
     out_features = 1
     compute_baseline_hazards = False
     get_target = lambda df: (df[:, 0], df[:, 1])
