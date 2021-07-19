@@ -1,23 +1,15 @@
 import argparse
-import os
 import pathlib
 import sys
 import tempfile
 import time
 
-import spdlog
 import torch
 import torchcde
 
+import model
 import synthea
-
-info_banner = "James Howard's ACM Thesis Project"
-app_name = os.path.basename(__file__)
-
-console = spdlog.ConsoleLogger(app_name)
-log_level_map = {"trace": spdlog.LogLevel.TRACE, "debug": spdlog.LogLevel.DEBUG, "info": spdlog.LogLevel.INFO,
-                 "warn": spdlog.LogLevel.WARN, "err": spdlog.LogLevel.ERR, "critical": spdlog.LogLevel.CRITICAL,
-                 "off": spdlog.LogLevel.OFF}
+from globals import logger, log_level_map, app_name, info_banner
 
 
 def main():
@@ -30,6 +22,7 @@ def main():
     parser.add_argument('--name', metavar="name", type=str,
                         default=pathlib.Path(tempfile.mktemp(suffix='', prefix='run-', dir=".")),
                         help="use name as output file base")
+    parser.add_argument('--n', metavar="count", type=int, default=None, help='use count random patients for modeling, defaults to all available')
     parser.add_argument('--type', metavar="type", type=str, default="coxcc", choices=['coxcc', 'coxph', 'pchazard'],
                         help='set the model type')
     parser.add_argument('--interp', metavar="interp", type=str, default="cubic", choices=['cubic', 'linear'],
@@ -47,13 +40,13 @@ def main():
 
     python_version = sys.version.replace('\n', '')
     version_string = f'Python {python_version}, {torch.__name__} {torch.__version__}, {torchcde.__name__} {torchcde.__version__}'
-    console.info(f'{info_banner}, {app_name}')
-    console.info(version_string)
+    logger.info(f'{info_banner}, {app_name}')
+    logger.info(version_string)
     if opts["version"]:
         sys.exit()
 
-    console.set_level(log_level_map[opts["loglevel"]])
-    console.debug(f'Console logging level {opts["loglevel"]}')
+    logger.set_level(log_level_map[opts["loglevel"]])
+    logger.debug(f'Console logging level {opts["loglevel"]}')
 
     if opts["device"] is None:
         if torch.cuda.is_available():
@@ -61,14 +54,22 @@ def main():
         else:
             opts["device"] = "cpu"
 
-    console.info(f'Setting the PyTorch seed to {opts["seed"]}')
+    if opts["device"] == "cuda":
+        torch.set_default_tensor_type('torch.cuda.FloatTensor')
+    else:
+        torch.set_default_tensor_type('torch.FloatTensor')
+    logger.info(f'Using device {opts["device"]} for PyTorch processing')
+
+    logger.info(f'Setting the PyTorch seed to {opts["seed"]}')
     torch.manual_seed(opts["seed"])
 
-    console.info(f'Using model type {opts["type"]}')
-    console.info(f'Starting time series classification with maximum epochs of {opts["maxepochs"]}')
-    synthea.make_model(console, file_name=opts["data"], output_name=opts["name"], model_type=opts["type"],
+    logger.info(f'Using model type {opts["type"]}')
+    logger.info(f'Starting time series classification with maximum epochs of {opts["maxepochs"]}')
+
+    trn_array, tst_array, val_array, id_list = synthea.get_data(file_name=opts["data"], n=opts["n"])
+    model.make_model(trn_array, val_array, tst_array, id_list, output_name=opts["name"], model_type=opts["type"],
                        batch_size=opts["batchsize"], max_epochs=opts["maxepochs"], verbose=opts["verbose"],
-                       interpolation=opts["interp"], device=opts["device"])
+                       interpolation=opts["interp"])
 
 
 if __name__ == "__main__":
