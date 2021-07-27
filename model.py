@@ -9,12 +9,10 @@ import c19ode
 from globals import logger
 
 
-def make_model(trn_array, val_array, tst_array, id_list, output_name, model_type="coxcc", batch_size=256, max_epochs=10,
-               interpolation="cubic", verbose=False):
+def make_interp(trn_array, val_array, tst_array, interpolation="cubic"):
     x_trn_array, y_trn_array = trn_array
     x_tst_array, y_tst_array = tst_array
     x_val_array, y_val_array = val_array
-    x1, x2, x3 = x_trn_array.size()
 
     logger.debug(f'Starting initial interpolation using method {interpolation}')
     if interpolation == "linear":
@@ -32,6 +30,16 @@ def make_model(trn_array, val_array, tst_array, id_list, output_name, model_type
         logger.info(f'Starting interpolation on testing dataset')
         x_tst_array = torchcde.natural_cubic_coeffs(x_tst_array)
     logger.debug(f'Completed initial interpolation')
+
+    return (x_trn_array, y_trn_array), (x_val_array, y_val_array), (x_tst_array, y_tst_array),
+
+
+def make_model(trn_array, val_array, tst_array, id_list, output_name, model_type="coxcc", batch_size=256, max_epochs=10,
+               interpolation="cubic", verbose=False):
+    x_trn_array, y_trn_array = trn_array
+    x_tst_array, y_tst_array = tst_array
+    x_val_array, y_val_array = val_array
+    x1, x2, x3 = x_trn_array.size()
 
     out_features = 1
     compute_baseline_hazards = False

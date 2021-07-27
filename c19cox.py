@@ -1,4 +1,6 @@
 import argparse
+import bz2
+import json
 import pathlib
 import sys
 import tempfile
@@ -34,6 +36,7 @@ def main():
                         help='set the maximum number of training epochs')
     parser.add_argument('--batchsize', metavar="size", type=int, default=32, help='set the batch size for training')
     parser.add_argument('--seed', metavar="seed", type=int, default=int(time.time()), help='set the random seed')
+    parser.add_argument('--dataprep', action='store_true', default=False, help='run primary interpolation and save results')
     parser.add_argument('--verbose', action='store_true', default=False, help='set verbose output from the trainer')
     parser.add_argument('--version', action='store_true', default=False, help='display version information and quit')
     opts = vars(parser.parse_args())
@@ -47,6 +50,15 @@ def main():
 
     logger.set_level(log_level_map[opts["loglevel"]])
     logger.debug(f'Console logging level {opts["loglevel"]}')
+
+    if opts["dataprep"]:
+        logger.trace(f"Reading data and starting interpolation")
+        interp_data = synthea.interp_data(opts['data'], interpolation=opts["interp"])
+        model_info_file_name = opts["name"] + ".json.bz2"
+        logger.info(f"Writing interpolated data to {model_info_file_name}")
+        with bz2.open(model_info_file_name, 'wt', encoding="utf-8") as f:
+            json.dump(interp_data, f)
+        sys.exit()
 
     if opts["device"] is None:
         if torch.cuda.is_available():
@@ -63,13 +75,17 @@ def main():
     logger.info(f'Setting the PyTorch seed to {opts["seed"]}')
     torch.manual_seed(opts["seed"])
 
+    trn_array, val_array, tst_array, id_list = synthea.load_data(opts['data'])
+    sys.exit()
+
     logger.info(f'Using model type {opts["type"]}')
     logger.info(f'Starting time series classification with maximum epochs of {opts["maxepochs"]}')
 
-    trn_array, tst_array, val_array, id_list = synthea.get_data(file_name=opts["data"], n=opts["n"])
-    model.make_model(trn_array, val_array, tst_array, id_list, output_name=opts["name"], model_type=opts["type"],
-                       batch_size=opts["batchsize"], max_epochs=opts["maxepochs"], verbose=opts["verbose"],
-                       interpolation=opts["interp"])
+
+
+    #model.make_model(trn_array, val_array, tst_array, id_list, output_name=opts["name"], model_type=opts["type"],
+    #                   batch_size=opts["batchsize"], max_epochs=opts["maxepochs"], verbose=opts["verbose"],
+    #                   interpolation=opts["interp"])
 
 
 if __name__ == "__main__":
