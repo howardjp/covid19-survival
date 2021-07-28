@@ -76,17 +76,17 @@ def main():
     torch.manual_seed(opts["seed"])
 
     trn_array, val_array, tst_array, id_list = synthea.load_data(opts['data'])
-    sys.exit()
 
     logger.info(f'Using model type {opts["type"]}')
     logger.info(f'Starting time series classification with maximum epochs of {opts["maxepochs"]}')
 
+    (cde_model, log) = model.run_model(trn_array, val_array, model_type=opts["type"],
+                    batch_size=opts["batchsize"], max_epochs=opts["maxepochs"], verbose=opts["verbose"],
+                    interpolation=opts["interp"])
 
+    model.test_model(cde_model, log, tst_array, id_list, output_name=opts["name"], model_type=opts["type"])
 
-    #model.make_model(trn_array, val_array, tst_array, id_list, output_name=opts["name"], model_type=opts["type"],
-    #                   batch_size=opts["batchsize"], max_epochs=opts["maxepochs"], verbose=opts["verbose"],
-    #                   interpolation=opts["interp"])
-
+    logger.info("Done.")
 
 if __name__ == "__main__":
     sys.exit(main())  # pragma: no cover

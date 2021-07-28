@@ -12,7 +12,7 @@ from globals import logger
 
 
 def interp_data(file_name, interpolation="cubic"):
-    logger.trace(f'Opening file {file_name}')
+    print(f'Opening file {file_name}')
     with bz2.open(file_name, 'rt', encoding="utf-8") as f:
         covid19_data = json.load(f)
 
@@ -29,11 +29,11 @@ def interp_data(file_name, interpolation="cubic"):
         x_array = []
         y_array = []
 
-        logger.debug(f'Reading information for patient {patient_id}')
+        print(f'Reading information for patient {patient_id}')
 
         observation_idx = covid19_data['info'][patient_id].keys()
         for observation_id in sorted(observation_idx):
-            logger.trace(f'Reading information for observation {observation_id}')
+            print(f'Reading information for observation {observation_id}')
             duration = covid19_data['outcome'][observation_id]['time']
             event = covid19_data['outcome'][observation_id]['outcome']
             y_array.append([duration, event])
@@ -48,16 +48,16 @@ def interp_data(file_name, interpolation="cubic"):
         x_array = torch.Tensor(x_array)
         y_array = torch.Tensor(y_array)
 
-        logger.trace(f'x_array size: {x_array.size()}')
-        logger.trace(f'y_array size: {y_array.size()}')
+        print(f'x_array size: {x_array.size()}')
+        print(f'y_array size: {y_array.size()}')
 
         if interpolation == "linear":
             x_array = torchcde.linear_interpolation_coeffs(x_array)
         else:
             x_array = torchcde.natural_cubic_coeffs(x_array)
 
-        logger.trace(f'post-interpolation x_array size: {x_array.size()}')
-        logger.trace(f'post-interpolation y_array size: {y_array.size()}')
+        print(f'post-interpolation x_array size: {x_array.size()}')
+        print(f'post-interpolation y_array size: {y_array.size()}')
 
         interpolation_data['xdata'][patient_id] = x_array.numpy().tolist()
         interpolation_data['ydata'][patient_id] = y_array.numpy().tolist()
@@ -68,27 +68,18 @@ def interp_data(file_name, interpolation="cubic"):
 def get_data_by_patient(patient_idx, covid19_data):
     i = 0
 
+    x_array = torch.Tensor()
+    y_array = torch.Tensor()
+
     for patient_id in sorted(patient_idx):
         i += 1
         logger.trace(f'Reading information for patient {patient_id}')
 
-        x_array_ptx = np.array(covid19_data['xdata'][patient_id])
-        y_array_ptx = np.array(covid19_data['ydata'][patient_id])
+        x_array_ptx = torch.Tensor(covid19_data['xdata'][patient_id])
+        y_array_ptx = torch.Tensor(covid19_data['ydata'][patient_id])
 
-        logger.trace(f'readback x_array size: {x_array_ptx.shape}')
-        logger.trace(f'readback y_array size: {y_array_ptx.shape}')
-
-        if i == 1:
-            x_array = x_array_ptx
-            y_array = y_array_ptx
-        else:
-            x_array = np.concatenate([x_array_ptx, x_array], axis = 0)
-            y_array = np.concatenate([y_array_ptx, y_array], axis = 0)
-
-    x_array = torch.Tensor(x_array)
-    y_array = torch.Tensor(y_array)
-    logger.trace(f'combined x_array size: {x_array.shape}')
-    logger.trace(f'combined y_array size: {y_array.shape}')
+        x_array = torch.cat((x_array, x_array_ptx), dim=0)
+        y_array = torch.cat((y_array, y_array_ptx), dim=0)
 
     return x_array, y_array
 
