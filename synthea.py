@@ -10,6 +10,7 @@ import torchcde
 
 from globals import logger
 
+
 def interp_data(file_name, interpolation="cubic"):
     logger.trace(f'Opening file {file_name}')
     with bz2.open(file_name, 'rt', encoding="utf-8") as f:
