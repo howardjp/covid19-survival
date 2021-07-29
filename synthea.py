@@ -1,71 +1,13 @@
-import bz2
-import json
+import cbor
+import pathlib
 
-import numpy as np
-import pandas as pd
 import torch
 from sklearn.model_selection import train_test_split
-
-import torchcde
 
 from globals import logger
 
 
-def interp_data(file_name, interpolation="cubic"):
-    print(f'Opening file {file_name}')
-    with bz2.open(file_name, 'rt', encoding="utf-8") as f:
-        covid19_data = json.load(f)
-
-    interpolation_data = dict()
-    interpolation_data['xdata'] = dict()
-    interpolation_data['ydata'] = dict()
-
-    time_index = covid19_data['time_index']
-    time_index_df = pd.DataFrame({'time_index': time_index})
-    patient_idx = covid19_data['info'].keys()
-    interpolation_data['patient_list'] = list(patient_idx)
-
-    for patient_id in sorted(patient_idx):
-        x_array = []
-        y_array = []
-
-        print(f'Reading information for patient {patient_id}')
-
-        observation_idx = covid19_data['info'][patient_id].keys()
-        for observation_id in sorted(observation_idx):
-            print(f'Reading information for observation {observation_id}')
-            duration = covid19_data['outcome'][observation_id]['time']
-            event = covid19_data['outcome'][observation_id]['outcome']
-            y_array.append([duration, event])
-            x = pd.DataFrame(covid19_data['data'][observation_id]).fillna(value=np.nan)
-            x = pd.merge_ordered(time_index_df, x, left_on='time_index', right_on=0, fill_method=None)
-            x = x.drop(['time_index', 0], axis=1)
-            x = x.to_numpy()
-            x_mask = (~torch.isnan(torch.Tensor(x))).cumsum(dim=0).cpu()
-            x = pd.concat([pd.DataFrame(time_index), pd.DataFrame(x), pd.DataFrame(x_mask.numpy())], axis=1).to_numpy()
-            x_array.append(x)
-
-        x_array = torch.Tensor(x_array)
-        y_array = torch.Tensor(y_array)
-
-        print(f'x_array size: {x_array.size()}')
-        print(f'y_array size: {y_array.size()}')
-
-        if interpolation == "linear":
-            x_array = torchcde.linear_interpolation_coeffs(x_array)
-        else:
-            x_array = torchcde.natural_cubic_coeffs(x_array)
-
-        print(f'post-interpolation x_array size: {x_array.size()}')
-        print(f'post-interpolation y_array size: {y_array.size()}')
-
-        interpolation_data['xdata'][patient_id] = x_array.numpy().tolist()
-        interpolation_data['ydata'][patient_id] = y_array.numpy().tolist()
-
-    return interpolation_data
-
-
-def get_data_by_patient(patient_idx, covid19_data):
+def get_data_by_patient(patient_idx, index_data, data_dir):
     i = 0
 
     x_array = torch.Tensor()
@@ -75,8 +17,11 @@ def get_data_by_patient(patient_idx, covid19_data):
         i += 1
         logger.trace(f'Reading information for patient {patient_id}')
 
-        x_array_ptx = torch.Tensor(covid19_data['xdata'][patient_id])
-        y_array_ptx = torch.Tensor(covid19_data['ydata'][patient_id])
+        with open(pathlib.Path(data_dir) / (patient_id + ".cbor"), 'rb') as f:
+            patient_data = cbor.load(f)
+
+        x_array_ptx = torch.Tensor(patient_data)
+        y_array_ptx = torch.Tensor(index_data[patient_id])
 
         x_array = torch.cat((x_array, x_array_ptx), dim=0)
         y_array = torch.cat((y_array, y_array_ptx), dim=0)
@@ -84,12 +29,13 @@ def get_data_by_patient(patient_idx, covid19_data):
     return x_array, y_array
 
 
-def load_data(file_name, n=None):
-    logger.trace(f'Opening file {file_name}')
-    with bz2.open(file_name, 'rt', encoding="utf-8") as f:
-        covid19_data = json.load(f)
+def load_data(data_dir, n=None):
+    index_path = pathlib.Path(data_dir) / "index.cbor"
+    logger.trace(f'Opening index file {index_path}')
+    with open(index_path, 'rb') as f:
+        index_data = cbor.load(f)
 
-    patient_ids_idx = covid19_data['patient_list']
+    patient_ids_idx = list(index_data.keys())
     if n is not None:
         logger.info(f"Selecting {n} patients at random as the patient dataset for training, validation, and testing")
         patient_ids_idx, _ = train_test_split(patient_ids_idx, train_size=n)
@@ -97,13 +43,13 @@ def load_data(file_name, n=None):
     patient_trn_idx, patient_val_idx = train_test_split(patient_trn_idx, test_size=0.20)
 
     logger.debug(f'Collecting training observation data...')
-    x_trn_array, y_trn_array = get_data_by_patient(patient_trn_idx, covid19_data)
+    x_trn_array, y_trn_array = get_data_by_patient(patient_trn_idx, index_data, data_dir)
 
     logger.debug(f'Collecting validation observation data...')
-    x_val_array, y_val_array = get_data_by_patient(patient_val_idx, covid19_data)
+    x_val_array, y_val_array = get_data_by_patient(patient_val_idx, index_data, data_dir)
 
     logger.debug(f'Collecting testing observation data...')
-    x_tst_array, y_tst_array = get_data_by_patient(patient_tst_idx, covid19_data)
+    x_tst_array, y_tst_array = get_data_by_patient(patient_tst_idx, index_data, data_dir)
 
     id_list = dict()
     id_list["training_patient_ids"] = patient_trn_idx
