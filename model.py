@@ -39,7 +39,7 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     x_trn_array, y_trn_array = trn_array
     x_val_array, y_val_array = val_array
 
-    x1, x2, x3 = x_trn_array.size()
+    x1, x2, x3 = x_trn_array.shape
 
     out_features = 1
     get_target = lambda df: (df[:, 0], df[:, 1])
@@ -68,11 +68,11 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
         model = CoxCC(net, tt.optim.Adam)
         learning_rate_tolerance = 2
 
-    logger.debug(f'Size of training data, x = {x_trn_array.shape}   y = ({y_trn_array[0].size()}, {y_trn_array[1].size()})')
-    logger.debug(f'Size of validation data, x = {x_val_array.size()} y = ({y_val_array[0].size()}, {y_val_array[1].size()})')
+    logger.debug(f'Size of training data, x = {x_trn_array.shape} y = ({y_trn_array[0].shape}, {y_trn_array[1].shape})')
+    logger.debug(f'Size of validation data, x = {x_val_array.shape} y = ({y_val_array[0].shape}, {y_val_array[1].shape})')
 
     logger.debug(f'Starting search for optimal learning rate...')
-    learning_rate_finder = model.lr_finder(x_trn_array, y_trn_array, batch_size=12, tolerance=learning_rate_tolerance, shuffle=False)
+    learning_rate_finder = model.lr_finder(x_trn_array, y_trn_array, batch_size, tolerance=learning_rate_tolerance, shuffle=False)
     best_lr = learning_rate_finder.get_best_lr()
     if best_lr > 0.01:
         logger.info(f"Best learning rate found is {best_lr}, using 0.01")
