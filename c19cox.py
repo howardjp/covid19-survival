@@ -76,9 +76,9 @@ def main():
     torch.manual_seed(opts["seed"])
 
     trn_array, val_array, tst_array, id_list = synthea.load_data(opts['data'], opts['n'])
-    trn_array = (trn_array[0].numpy(), trn_array[1].numpy())
-    val_array = (val_array[0].numpy(), val_array[1].numpy())
-    tst_array = (tst_array[0].numpy(), tst_array[1].numpy())
+    trn_array = (trn_array[0].cpu().numpy(), trn_array[1].cpu().numpy())
+    val_array = (val_array[0].cpu().numpy(), val_array[1].cpu().numpy())
+    tst_array = (tst_array[0].cpu().numpy(), tst_array[1].cpu().numpy())
 
     logger.info(f'Using model type {opts["type"]}')
     logger.info(f'Starting time series classification with maximum epochs of {opts["maxepochs"]}')
