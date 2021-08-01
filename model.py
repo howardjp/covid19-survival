@@ -59,9 +59,14 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
         y_val_array = get_target(y_val_array)
 
     val = tt.tuplefy(x_val_array, y_val_array)
-#    val = val.repeat(10).cat()
+    val = val.repeat(10).cat()
 
-    net = c19ode.NeuralCDE(input_channels=int(x3/4), hidden_channels=2, output_channels=out_features, interpolation=interpolation)
+    if interpolation == "linear":
+        input_channel_count = x3
+    else:
+        input_channel_count = int(x3/4)
+
+    net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=2, output_channels=out_features, interpolation=interpolation)
 
     if model_type == 'pchazard':
         model = PCHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
