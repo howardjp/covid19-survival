@@ -50,7 +50,7 @@ class NeuralCDE(torch.nn.Module):
 
     def forward(self, coeffs):
         if self.interpolation == 'cubic':
-            X = torchcde.NaturalCubicSpline(coeffs)
+            X = torchcde.CubicSpline(coeffs)
         elif self.interpolation == 'linear':
             X = torchcde.LinearInterpolation(coeffs)
         else:
