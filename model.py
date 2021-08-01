@@ -3,7 +3,7 @@ import json
 
 import torchcde
 import torchtuples as tt
-from pycox.models import CoxCC, CoxPH, PCHazard
+from pycox.models import CoxCC, PCHazard, LogisticHazard
 
 import c19ode
 from globals import logger
@@ -43,9 +43,14 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
 
     out_features = 1
     get_target = lambda df: (df[:, 0], df[:, 1])
+    num_durations = 10
     if model_type == 'pchazard':
-        num_durations = 10
         label_transform = PCHazard.label_transform(num_durations)
+        y_trn_array = label_transform.fit_transform(*get_target(y_trn_array))
+        y_val_array = label_transform.transform(*get_target(y_val_array))
+        out_features = label_transform.out_features
+    elif model_type == "logistic":
+        label_transform = LogisticHazard.label_transform(num_durations)
         y_trn_array = label_transform.fit_transform(*get_target(y_trn_array))
         y_val_array = label_transform.transform(*get_target(y_val_array))
         out_features = label_transform.out_features
@@ -54,16 +59,16 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
         y_val_array = get_target(y_val_array)
 
     val = tt.tuplefy(x_val_array, y_val_array)
-    val = val.repeat(10).cat()
+#    val = val.repeat(10).cat()
 
-    net = c19ode.NeuralCDE(input_channels=int(x3/4), hidden_channels=64, output_channels=out_features, interpolation=interpolation)
+    net = c19ode.NeuralCDE(input_channels=int(x3/4), hidden_channels=2, output_channels=out_features, interpolation=interpolation)
 
     if model_type == 'pchazard':
         model = PCHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
         learning_rate_tolerance = 8
-    elif model_type == 'coxph':
-        model = CoxPH(net, tt.optim.Adam)
-        learning_rate_tolerance = 10
+    elif model_type == 'logistic':
+        model = LogisticHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
+        learning_rate_tolerance = 8
     else:
         model = CoxCC(net, tt.optim.Adam)
         learning_rate_tolerance = 2
@@ -97,7 +102,7 @@ def test_model(model, log, tst_array, id_list, output_name, model_type="coxcc"):
     output_name = str(output_name)
     model_info_file_name = output_name + ".json.bz2"
 
-    if model_type != "pchazard":
+    if model_type == "coxcc":
         compute_baseline_hazards = True
         model.compute_baseline_hazards()
     logger.debug(f"Writing model information to {model_info_file_name}")
@@ -113,5 +118,6 @@ def test_model(model, log, tst_array, id_list, output_name, model_type="coxcc"):
     if compute_baseline_hazards:
         logger.debug(f"Writing model to {output_name}.pt and {output_name}_blh.pickle")
     else:
-        logger.debug(f"Writing model to {output_name}.pt")
+        output_name = output_name + ".model"
+        logger.debug(f"Writing model to {output_name}")
     model.save_net(output_name)
