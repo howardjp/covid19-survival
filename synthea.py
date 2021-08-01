@@ -15,7 +15,7 @@ def get_data_by_patient(patient_idx, index_data, data_dir):
 
     for patient_id in sorted(patient_idx):
         i += 1
-        logger.trace(f'Reading information for patient {patient_id}')
+        logger.debug(f'Reading information for patient {patient_id}')
 
         with open(pathlib.Path(data_dir) / (patient_id + ".cbor"), 'rb') as f:
             patient_data = cbor.load(f)
@@ -23,8 +23,13 @@ def get_data_by_patient(patient_idx, index_data, data_dir):
         x_array_ptx = torch.Tensor(patient_data)
         y_array_ptx = torch.Tensor(index_data[patient_id])
 
-        x_array = torch.cat((x_array, x_array_ptx), dim=0)
-        y_array = torch.cat((y_array, y_array_ptx), dim=0)
+        logger.trace(f"x_array_ptx.size = {x_array_ptx.shape}, y_array_ptx.size = {y_array_ptx.shape}")
+        x1, _, _ = x_array_ptx.size()
+        if x1 > 1:
+            x_array = torch.cat((x_array, x_array_ptx), dim=0)
+            y_array = torch.cat((y_array, y_array_ptx), dim=0)
+        else:
+            logger.debug(f"Skipping patient {patient_id}")
 
     return x_array, y_array
 
