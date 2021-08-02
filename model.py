@@ -66,7 +66,7 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     else:
         input_channel_count = int(x3/4)
 
-    net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=2, output_channels=out_features, interpolation=interpolation)
+    net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=out_features, interpolation=interpolation)
 
     if model_type == 'pchazard':
         model = PCHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
