@@ -116,10 +116,11 @@ def test_model(model, log, tst_array, id_list, output_name, model_type="coxcc"):
     else:
         surv = model.predict_surv_df(x_tst)
 
+    logger.debug(f"Collecting evaluations information")
     time_grid = numpy.linspace(durations_tst.min(), durations_tst.max(), 100)
     ev = EvalSurv(surv, durations_tst, events_tst, censor_surv='km')
 
-    eval = dict{}
+    eval = dict()
     eval['antolini'] = ev.concordance_td('antolini')
     eval['antoliniadj'] = ev.concordance_td('adj_antolini')
     eval['ibs'] = ev.integrated_brier_score(time_grid)
@@ -127,7 +128,7 @@ def test_model(model, log, tst_array, id_list, output_name, model_type="coxcc"):
     eval['bs'] = ev.brier_score(time_grid).to_numpy().tolist()
     eval['nbll'] = ev.nbll(time_grid).to_numpy().tolist()
 
-    logger.debug(f"Writing model information to {model_info_file_name}")
+    logger.info(f"Writing model information to {model_info_file_name}")
     model_info = dict()
     model_info["method"] = model_type
     model_info["patient_ids"] = id_list
@@ -140,8 +141,8 @@ def test_model(model, log, tst_array, id_list, output_name, model_type="coxcc"):
         json.dump(model_info, f)
 
     if compute_baseline_hazards:
-        logger.debug(f"Writing model to {output_name}.pt and {output_name}_blh.pickle")
+        logger.info(f"Writing model to {output_name}.pt and {output_name}_blh.pickle")
     else:
         output_name = output_name + ".model"
-        logger.debug(f"Writing model to {output_name}")
+        logger.info(f"Writing model to {output_name}")
     model.save_net(output_name)
