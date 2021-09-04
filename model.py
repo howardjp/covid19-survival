@@ -110,13 +110,32 @@ def test_model(model, log, tst_array, id_list, output_name, model_type="coxcc"):
     if model_type == "coxcc":
         compute_baseline_hazards = True
         model.compute_baseline_hazards()
+
+    if model_type == "logistic":
+        surv = model.interpolate(10).predict_surv_df(x_tst)
+    else:
+        surv = model.predict_surv_df(x_tst)
+
+    time_grid = numpy.linspace(durations_tst.min(), durations_tst.max(), 100)
+    ev = EvalSurv(surv, durations_tst, events_tst, censor_surv='km')
+
+    eval = dict{}
+    eval['antolini'] = ev.concordance_td('antolini')
+    eval['antoliniadj'] = ev.concordance_td('adj_antolini')
+    eval['ibs'] = ev.integrated_brier_score(time_grid)
+    eval['inbll'] = ev.integrated_nbll(time_grid)
+    eval['bs'] = ev.brier_score(time_grid).to_numpy().tolist()
+    eval['nbll'] = ev.nbll(time_grid).to_numpy().tolist()
+
     logger.debug(f"Writing model information to {model_info_file_name}")
     model_info = dict()
     model_info["method"] = model_type
     model_info["patient_ids"] = id_list
     model_info["training_history"] = json.loads(log.to_pandas().to_json())
-    model_info["predictions"] = json.loads(model.predict_surv_df(x_tst_array).to_json())
+    model_info["predictions"] = json.loads(surv.to_json())
     model_info["true_values"] = json.dumps(y_tst_array.tolist())
+    model_info['eval'] = eval
+
     with bz2.open(model_info_file_name, 'wt', encoding="utf-8") as f:
         json.dump(model_info, f)
 
