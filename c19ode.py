@@ -11,8 +11,8 @@ class CDEFunc(torch.nn.Module):
         self.input_channels = input_channels
         self.hidden_channels = hidden_channels
 
-        self.linear1 = torch.nn.Linear(hidden_channels, 128)
-        self.linear2 = torch.nn.Linear(128, input_channels * hidden_channels)
+        self.linear1 = torch.nn.Linear(hidden_channels, 64)
+        self.linear2 = torch.nn.Linear(64, input_channels * hidden_channels)
 
     ######################
     # For most purposes the t argument can probably be ignored; unless you want your CDE to behave differently at
