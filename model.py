@@ -72,7 +72,7 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     else:
         input_channel_count = int(x3/4)
 
-    if opts == "cuda":
+    if device == "cuda":
         logger.debug(f'Moving data to the GPU')
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
         x_trn_array = x_trn_array.cuda()
