@@ -72,13 +72,11 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     else:
         input_channel_count = int(x3/4)
 
-    if device == "cuda":
-        logger.debug(f'Moving data to the GPU')
-        torch.set_default_tensor_type('torch.cuda.FloatTensor')
-        x_trn_array = torch.from_numpy(x_trn_array).cuda()
-        y_trn_array = (torch.from_numpy(y_trn_array[:, 0]).cuda(), torch.from_numpy(y_trn_array[:, 1]).cuda())
-        x_val_array = torch.from_numpy(x_val_array).cuda()
-        y_val_array = (torch.from_numpy(y_val_array[:, 0]).cuda(), torch.from_numpy(y_val_array[:, 1]).cuda())
+        # logger.debug(f'Moving data to the GPU')
+        # x_trn_array = torch.from_numpy(x_trn_array).cuda()
+        # y_trn_array = (torch.from_numpy(y_trn_array[:, 0]).cuda(), torch.from_numpy(y_trn_array[:, 1]).cuda())
+        # x_val_array = torch.from_numpy(x_val_array).cuda()
+        # y_val_array = (torch.from_numpy(y_val_array[:, 0]).cuda(), torch.from_numpy(y_val_array[:, 1]).cuda())
 
     val = tt.tuplefy(x_val_array, y_val_array)
     val = val.repeat(10).cat()
@@ -98,6 +96,8 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     logger.debug(f'Size of training data, x = {x_trn_array.shape} y = ({y_trn_array[0].shape}, {y_trn_array[1].shape})')
     logger.debug(f'Size of validation data, x = {x_val_array.shape} y = ({y_val_array[0].shape}, {y_val_array[1].shape})')
 
+    if device == "cuda":
+        torch.set_default_tensor_type('torch.cuda.FloatTensor')
     logger.debug(f'Starting search for optimal learning rate...')
     learning_rate_finder = model.lr_finder(x_trn_array, y_trn_array, batch_size, tolerance=learning_rate_tolerance, shuffle=False)
     best_lr = learning_rate_finder.get_best_lr()
