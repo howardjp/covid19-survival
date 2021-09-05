@@ -35,11 +35,16 @@ def make_interp(trn_array, val_array, tst_array, interpolation="cubic"):
 
 
 def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epochs=10,
-              interpolation="cubic", verbose=False):
+              interpolation="cubic", verbose=False, device = "cpu"):
     x_trn_array, y_trn_array = trn_array
     x_val_array, y_val_array = val_array
 
     x1, x2, x3 = x_trn_array.shape
+
+    if device == "cuda":
+        torch.set_default_tensor_type('torch.cuda.FloatTensor')
+    else:
+        torch.set_default_tensor_type('torch.FloatTensor')
 
     out_features = 1
     get_target = lambda df: (df[:, 0], df[:, 1])
@@ -58,13 +63,21 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
         y_trn_array = get_target(y_trn_array)
         y_val_array = get_target(y_val_array)
 
-    val = tt.tuplefy(x_val_array, y_val_array)
-    val = val.repeat(10).cat()
-
     if interpolation == "linear":
         input_channel_count = x3
     else:
         input_channel_count = int(x3/4)
+
+    if opts["device"] == "cuda":
+        logger.trace(f'Moving data to the GPU')
+        torch.set_default_tensor_type('torch.cuda.FloatTensor')
+        x_trn_array = x_trn_array.cuda()
+        y_trn_array = y_trn_array.cuda()
+        x_val_array = x_val_array.cuda()
+        y_val_array = y_val_array.cuda()
+
+    val = tt.tuplefy(x_val_array, y_val_array)
+    val = val.repeat(10).cat()
 
     net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=out_features, interpolation=interpolation)
 

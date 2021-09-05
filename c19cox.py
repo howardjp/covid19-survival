@@ -66,10 +66,7 @@ def main():
         else:
             opts["device"] = "cpu"
 
-    if opts["device"] == "cuda":
-        torch.set_default_tensor_type('torch.cuda.FloatTensor')
-    else:
-        torch.set_default_tensor_type('torch.FloatTensor')
+    torch.set_default_tensor_type('torch.FloatTensor')
     logger.info(f'Using device {opts["device"]} for PyTorch processing')
 
     logger.info(f'Setting the PyTorch seed to {opts["seed"]}')
@@ -85,7 +82,7 @@ def main():
 
     (cde_model, log) = model.run_model(trn_array, val_array, model_type=opts["type"],
                     batch_size=opts["batchsize"], max_epochs=opts["maxepochs"], verbose=opts["verbose"],
-                    interpolation=opts["interp"])
+                    interpolation=opts["interp"], device = opts["device"])
 
     model.test_model(cde_model, log, tst_array, id_list, output_name=opts["name"], model_type=opts["type"])
 
