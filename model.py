@@ -75,10 +75,10 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     if device == "cuda":
         logger.debug(f'Moving data to the GPU')
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
-        x_trn_array = x_trn_array.cuda()
-        y_trn_array = y_trn_array.cuda()
-        x_val_array = x_val_array.cuda()
-        y_val_array = y_val_array.cuda()
+        x_trn_array = torch.from_numpy(x_trn_array).cuda()
+        y_trn_array = torch.from_numpy(y_trn_array).cuda()
+        x_val_array = torch.from_numpy(x_val_array).cuda()
+        y_val_array = torch.from_numpy(y_val_array).cuda()
 
     val = tt.tuplefy(x_val_array, y_val_array)
     val = val.repeat(10).cat()
