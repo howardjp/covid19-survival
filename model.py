@@ -107,14 +107,18 @@ def test_model(model, log, tst_array, id_list, output_name, model_type="coxcc"):
     output_name = str(output_name)
     model_info_file_name = output_name + ".json.bz2"
 
+    durations_tst = y_tst[:,0].numpy()
+    events_tst = y_tst[:,1].numpy()
+
     if model_type == "coxcc":
         compute_baseline_hazards = True
         model.compute_baseline_hazards()
 
+    logger.debug(f"Running test evaluations")
     if model_type == "logistic":
-        surv = model.interpolate(10).predict_surv_df(x_tst)
+        surv = model.interpolate(10).predict_surv_df(x_tst_array)
     else:
-        surv = model.predict_surv_df(x_tst)
+        surv = model.predict_surv_df(x_tst_array)
 
     logger.debug(f"Collecting evaluations information")
     time_grid = numpy.linspace(durations_tst.min(), durations_tst.max(), 100)
