@@ -44,10 +44,12 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     x1, x2, x3 = x_trn_array.shape
 
     if device == "cuda":
+        logger.debug(f'Converting default tensor type to FloatTensor')
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
     else:
         torch.set_default_tensor_type('torch.FloatTensor')
 
+    logger.debug(f'Adjusting labels, as appropriate')
     out_features = 1
     get_target = lambda df: (df[:, 0], df[:, 1])
     num_durations = 10
@@ -70,8 +72,8 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     else:
         input_channel_count = int(x3/4)
 
-    if opts["device"] == "cuda":
-        logger.trace(f'Moving data to the GPU')
+    if opts == "cuda":
+        logger.debug(f'Moving data to the GPU')
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
         x_trn_array = x_trn_array.cuda()
         y_trn_array = y_trn_array.cuda()
