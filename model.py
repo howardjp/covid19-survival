@@ -1,6 +1,7 @@
 import bz2
 import json
 
+import numpy
 import torch
 import torchcde
 import torchtuples as tt
