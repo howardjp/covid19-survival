@@ -95,8 +95,9 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     if device == "cuda":
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
     logger.debug(f'Starting search for optimal learning rate...')
-    learning_rate_finder = model.lr_finder(x_trn_array, y_trn_array, batch_size, tolerance=learning_rate_tolerance, shuffle=False)
-    best_lr = learning_rate_finder.get_best_lr()
+    ##learning_rate_finder = model.lr_finder(x_trn_array, y_trn_array, batch_size, tolerance=learning_rate_tolerance, shuffle=False)
+    ##best_lr = learning_rate_finder.get_best_lr()
+    best_lr = 1
     if best_lr > 0.01:
         logger.info(f"Best learning rate found is {best_lr}, using 0.01")
         best_lr = 0.01
@@ -120,8 +121,8 @@ def test_model(model, log, tst_array, id_list, output_name, model_type="coxcc"):
     output_name = str(output_name)
     model_info_file_name = output_name + ".json.bz2"
 
-    durations_tst = x_tst_array[:,0]
-    events_tst = x_tst_array[:,1]
+    durations_tst = y_tst_array[:,0]
+    events_tst = y_tst_array[:,1]
 
     if model_type == "coxcc":
         compute_baseline_hazards = True
@@ -133,6 +134,8 @@ def test_model(model, log, tst_array, id_list, output_name, model_type="coxcc"):
     else:
         surv = model.predict_surv_df(x_tst_array)
 
+    logger.trace(f"durations_tst.shape: {durations_tst.shape}")
+    logger.trace(f"events_tst.shape: {events_tst.shape}")
     logger.debug(f"Collecting evaluations information")
     time_grid = numpy.linspace(durations_tst.min(), durations_tst.max(), 100)
     ev = EvalSurv(surv, durations_tst, events_tst, censor_surv='km')
