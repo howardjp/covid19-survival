@@ -118,8 +118,8 @@ def test_model(model, log, tst_array, id_list, output_name, model_type="coxcc"):
     output_name = str(output_name)
     model_info_file_name = output_name + ".json.bz2"
 
-    durations_tst = x_tst_array[:,0].numpy()
-    events_tst = x_tst_array[:,1].numpy()
+    durations_tst = x_tst_array[:,0]
+    events_tst = x_tst_array[:,1]
 
     if model_type == "coxcc":
         compute_baseline_hazards = True
