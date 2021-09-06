@@ -5,8 +5,9 @@ import numpy
 import torch
 import torchcde
 import torchtuples as tt
+
+from pycox.evaluation import EvalSurv
 from pycox.models import CoxCC, PCHazard, LogisticHazard
-import torch
 
 import c19ode
 from globals import logger
