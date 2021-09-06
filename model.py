@@ -75,7 +75,7 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     val = tt.tuplefy(x_val_array, y_val_array)
     val = val.repeat(10).cat()
 
-    net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=out_features, interpolation=interpolation)
+    net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=128, output_channels=out_features, interpolation=interpolation)
 
     if model_type == 'pchazard':
         model = PCHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
@@ -118,8 +118,8 @@ def test_model(model, log, tst_array, id_list, output_name, model_type="coxcc"):
     output_name = str(output_name)
     model_info_file_name = output_name + ".json.bz2"
 
-    durations_tst = y_tst[:,0].numpy()
-    events_tst = y_tst[:,1].numpy()
+    durations_tst = x_tst_array[:,0].numpy()
+    events_tst = x_tst_array[:,1].numpy()
 
     if model_type == "coxcc":
         compute_baseline_hazards = True
