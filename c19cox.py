@@ -84,7 +84,7 @@ def main():
                     batch_size=opts["batchsize"], max_epochs=opts["maxepochs"], verbose=opts["verbose"],
                     interpolation=opts["interp"], device = opts["device"])
 
-    model.test_model(cde_model, log, tst_array, id_list, output_name=opts["name"], model_type=opts["type"])
+    model.test_model(cde_model, log, trn_array, tst_array, id_list, output_name=opts["name"], model_type=opts["type"])
 
     logger.info("Done.")
 

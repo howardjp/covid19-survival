@@ -8,7 +8,7 @@ import torchcde
 import torchtuples as tt
 
 from pycox.evaluation import EvalSurv
-from pycox.models import CoxCC, PCHazard, LogisticHazard
+from pycox.models import CoxCC, PCHazard, LogisticHazard, CoxPH, CoxTime
 
 import c19ode
 from globals import logger
@@ -49,12 +49,12 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     if device == "cuda":
         logger.debug(f'Converting default tensor type to FloatTensor')
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
+        torch.cuda.empty_cache()
+        logger.debug("And now let's pause and check the GPU status")
+        torch.cuda.memory_summary(device=None, abbreviated=False)
     else:
         torch.set_default_tensor_type('torch.FloatTensor')
 
-    torch.cuda.empty_cache()
-    logger.debug("And now let's pause and check the GPU status")
-    torch.cuda.memory_summary(device=None, abbreviated=False)
     logger.debug("creating test tensor")
     _ = torch.Tensor([0, 1, 0, 1])
     logger.debug(f'Adjusting labels, as appropriate')
@@ -92,7 +92,7 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
         model = LogisticHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
         learning_rate_tolerance = 8
     else:
-        model = CoxCC(net, tt.optim.Adam)
+        model = CoxPH(net, tt.optim.Adam)
         learning_rate_tolerance = 2
 
     logger.debug(f'Size of training data, x = {x_trn_array.shape} y = ({y_trn_array[0].shape}, {y_trn_array[1].shape})')
@@ -119,7 +119,8 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     return (model, log)
 
 
-def test_model(model, log, tst_array, id_list, output_name, model_type="coxcc"):
+def test_model(model, log, trn_array, tst_array, id_list, output_name, model_type="coxcc"):
+    x_trn_array, y_trn_array = tst_array
     x_tst_array, y_tst_array = tst_array
     compute_baseline_hazards = False
 
@@ -129,9 +130,12 @@ def test_model(model, log, tst_array, id_list, output_name, model_type="coxcc"):
     durations_tst = y_tst_array[:,0]
     events_tst = y_tst_array[:,1]
 
+    durations_trn = y_trn_array[:,0]
+    events_trn = y_trn_array[:,1]
+
     if model_type == "coxcc":
         compute_baseline_hazards = True
-        model.compute_baseline_hazards()
+        model.compute_baseline_hazards(x_trn_array, (durations_trn, events_trn), sample=100)
 
     logger.debug(f"Running test evaluations")
     if model_type == "logistic":
