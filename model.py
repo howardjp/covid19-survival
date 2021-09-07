@@ -95,9 +95,8 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     if device == "cuda":
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
     logger.debug(f'Starting search for optimal learning rate...')
-    ##learning_rate_finder = model.lr_finder(x_trn_array, y_trn_array, batch_size, tolerance=learning_rate_tolerance, shuffle=False)
-    ##best_lr = learning_rate_finder.get_best_lr()
-    best_lr = 1
+    learning_rate_finder = model.lr_finder(x_trn_array, y_trn_array, batch_size, tolerance=learning_rate_tolerance, shuffle=False)
+    best_lr = learning_rate_finder.get_best_lr()
     if best_lr > 0.01:
         logger.info(f"Best learning rate found is {best_lr}, using 0.01")
         best_lr = 0.01
