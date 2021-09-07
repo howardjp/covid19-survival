@@ -1,5 +1,6 @@
 import bz2
 import json
+import os
 
 import numpy
 import torch
@@ -51,6 +52,8 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     else:
         torch.set_default_tensor_type('torch.FloatTensor')
 
+    logger.debug("And now let's pause and check the GPU status")
+    os.system("nvidia-smi -q")
     logger.debug("creating test tensor")
     _ = torch.Tensor([0, 1, 0, 1])
     logger.debug(f'Adjusting labels, as appropriate')
@@ -79,7 +82,7 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     val = tt.tuplefy(x_val_array, y_val_array)
 
     logger.debug(f'Creating neural CDE net')
-    net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=128, output_channels=out_features, interpolation=interpolation)
+    net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=out_features, interpolation=interpolation)
 
     if model_type == 'pchazard':
         model = PCHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
