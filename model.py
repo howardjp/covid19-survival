@@ -49,9 +49,6 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     if device == "cuda":
         logger.debug(f'Converting default tensor type to FloatTensor')
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
-        torch.cuda.empty_cache()
-        logger.debug("And now let's pause and check the GPU status")
-        torch.cuda.memory_summary(device=None, abbreviated=False)
     else:
         torch.set_default_tensor_type('torch.FloatTensor')
 
