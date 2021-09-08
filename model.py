@@ -8,7 +8,7 @@ import torchcde
 import torchtuples as tt
 
 from pycox.evaluation import EvalSurv
-from pycox.models import CoxCC, PCHazard, LogisticHazard, CoxPH, CoxTime
+from pycox.models import CoxCC, PCHazard, LogisticHazard, CoxPH, MTLR
 
 import c19ode
 from globals import logger
@@ -60,17 +60,18 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     num_durations = 10
     if model_type == 'pchazard':
         label_transform = PCHazard.label_transform(num_durations)
-        y_trn_array = label_transform.fit_transform(*get_target(y_trn_array))
-        y_val_array = label_transform.transform(*get_target(y_val_array))
-        out_features = label_transform.out_features
     elif model_type == "logistic":
         label_transform = LogisticHazard.label_transform(num_durations)
+    elif model_type == "mtlr":
+        label_transform = MTLR.label_transform(num_durations)
+
+    if model_type == "coxcc":
+        y_trn_array = get_target(y_trn_array)
+        y_val_array = get_target(y_val_array)
+    else:
         y_trn_array = label_transform.fit_transform(*get_target(y_trn_array))
         y_val_array = label_transform.transform(*get_target(y_val_array))
         out_features = label_transform.out_features
-    else:
-        y_trn_array = get_target(y_trn_array)
-        y_val_array = get_target(y_val_array)
 
     if interpolation == "linear":
         input_channel_count = x3
@@ -82,12 +83,13 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     logger.debug(f'Creating neural CDE net')
     net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=out_features, interpolation=interpolation)
 
+    learning_rate_tolerance = 4
     if model_type == 'pchazard':
         model = PCHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
-        learning_rate_tolerance = 8
     elif model_type == 'logistic':
         model = LogisticHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
-        learning_rate_tolerance = 8
+    elif model_type == "mtlr":
+        model = MTLR(net, tt.optim.Adam, duration_index=label_transform.cuts)
     else:
         model = CoxPH(net, tt.optim.Adam)
         learning_rate_tolerance = 2
@@ -117,7 +119,7 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
 
 
 def test_model(model, log, trn_array, tst_array, id_list, output_name, model_type="coxcc"):
-    x_trn_array, y_trn_array = tst_array
+    x_trn_array, y_trn_array = trn_array
     x_tst_array, y_tst_array = tst_array
     compute_baseline_hazards = False
 
@@ -136,6 +138,8 @@ def test_model(model, log, trn_array, tst_array, id_list, output_name, model_typ
 
     logger.debug(f"Running test evaluations")
     if model_type == "logistic":
+        surv = model.interpolate(10).predict_surv_df(x_tst_array)
+    elif model_type == "mtlr":
         surv = model.interpolate(10).predict_surv_df(x_tst_array)
     else:
         surv = model.predict_surv_df(x_tst_array)
