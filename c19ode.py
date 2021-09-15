@@ -12,6 +12,7 @@ class CDEFunc(torch.nn.Module):
         self.hidden_channels = hidden_channels
 
         self.linear1 = torch.nn.Linear(hidden_channels, 64)
+        self.middlex = torch.nn.GRUCell(input_size = 64, hidden_size=64)
         self.linear2 = torch.nn.Linear(64, input_channels * hidden_channels)
 
     ######################
@@ -21,6 +22,8 @@ class CDEFunc(torch.nn.Module):
     def forward(self, t, z):
         # z has shape (batch, hidden_channels)
         z = self.linear1(z)
+        z = z.relu()
+        z = self.middlex(z)
         z = z.relu()
         z = self.linear2(z)
         ######################
@@ -65,8 +68,11 @@ class NeuralCDE(torch.nn.Module):
 
         ######################
         # Actually solve the CDE.
+        # Solver options:
+        # {"dopri8", "dopri5", "bosh3", "fehlberg2", "adaptive_heun", "euler", "midpoint", "rk4", "explicit_adams", "implicit_adams", "fixed_adams", "scipy_solver"}.
         ######################
-        z_T = torchcde.cdeint(X=X, z0=z0, func=self.func, t=X.interval, adjoint=False, backend=self.backend)
+        step_size = (X.grid_points[1:] - X.grid_points[:-1]).min()
+        z_T = torchcde.cdeint(X=X, z0=z0, func=self.func, t=X.interval, adjoint=False, backend=self.backend, method='euler')
 
         ######################
         # Both the initial value and the terminal value are returned from cdeint; extract just the terminal value,
