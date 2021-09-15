@@ -22,8 +22,6 @@ class CDEFunc(torch.nn.Module):
         # z has shape (batch, hidden_channels)
         z = self.linear1(z)
         z = z.relu()
-        z = self.middlex(z)
-        z = z.relu()
         z = self.linear2(z)
         ######################
         # Easy-to-forget gotcha: Best results tend to be obtained by adding a final tanh nonlinearity.
