@@ -12,7 +12,6 @@ class CDEFunc(torch.nn.Module):
         self.hidden_channels = hidden_channels
 
         self.linear1 = torch.nn.Linear(hidden_channels, 64)
-        self.middlex = torch.nn.GRUCell(input_size = 64, hidden_size=64)
         self.linear2 = torch.nn.Linear(64, input_channels * hidden_channels)
 
     ######################
