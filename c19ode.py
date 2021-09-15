@@ -39,7 +39,7 @@ class CDEFunc(torch.nn.Module):
 # Next, we need to package CDEFunc up into a model that computes the integral.
 ######################
 class NeuralCDE(torch.nn.Module):
-    def __init__(self, input_channels, hidden_channels, output_channels, interpolation="cubic", separate_time = False):
+    def __init__(self, input_channels, hidden_channels, output_channels, interpolation="cubic", separate_time = False, backend="torchdiffeq"):
         super(NeuralCDE, self).__init__()
 
         self.func = CDEFunc(input_channels, hidden_channels)
@@ -47,6 +47,7 @@ class NeuralCDE(torch.nn.Module):
         self.readout = torch.nn.Linear(hidden_channels, output_channels)
         self.interpolation = interpolation
         self.separate_time = separate_time
+        self.backend = backend
 
     def forward(self, coeffs):
         if self.interpolation == 'cubic':
@@ -65,7 +66,7 @@ class NeuralCDE(torch.nn.Module):
         ######################
         # Actually solve the CDE.
         ######################
-        z_T = torchcde.cdeint(X=X, z0=z0, func=self.func, t=X.interval, adjoint=False)
+        z_T = torchcde.cdeint(X=X, z0=z0, func=self.func, t=X.interval, adjoint=False, backend=self.backend)
 
         ######################
         # Both the initial value and the terminal value are returned from cdeint; extract just the terminal value,

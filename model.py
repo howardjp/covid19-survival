@@ -40,7 +40,7 @@ def make_interp(trn_array, val_array, tst_array, interpolation="cubic"):
 
 
 def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epochs=10,
-              interpolation="cubic", verbose=False, device = "cpu"):
+              interpolation="cubic", verbose=False, device = "cpu", backend = "torchdiffeq"):
     x_trn_array, y_trn_array = trn_array
     x_val_array, y_val_array = val_array
 
@@ -81,7 +81,7 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     val = tt.tuplefy(x_val_array, y_val_array)
 
     logger.debug(f'Creating neural CDE net')
-    net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=out_features, interpolation=interpolation)
+    net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=out_features, interpolation=interpolation, backend=backend)
 
     learning_rate_tolerance = 4
     if model_type == 'pchazard':
@@ -157,6 +157,11 @@ def test_model(model, log, trn_array, tst_array, id_list, output_name, model_typ
     eval['inbll'] = ev.integrated_nbll(time_grid)
     eval['bs'] = ev.brier_score(time_grid).to_numpy().tolist()
     eval['nbll'] = ev.nbll(time_grid).to_numpy().tolist()
+
+    logger.debug(f"Antolini concordance: {eval['antolini']}")
+    logger.debug(f"Adjusted Antolini concordance: {eval['antoliniadj']}")
+    logger.debug(f"Integrated Brier Score: {eval['ibs']}")
+    logger.debug(f"Integrated NBLL: {eval['inbll']}")
 
     logger.info(f"Writing model information to {model_info_file_name}")
     model_info = dict()

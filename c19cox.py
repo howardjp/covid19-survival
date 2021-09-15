@@ -27,6 +27,8 @@ def main():
     parser.add_argument('--n', metavar="count", type=int, default=None, help='use count random patients for modeling, defaults to all available')
     parser.add_argument('--type', metavar="type", type=str, default="coxcc", choices=['coxcc', 'pchazard', 'logistic', "mtlr"],
                         help='set the model type')
+    parser.add_argument('--solver', metavar="type", type=str, default="torchdiffeq", choices=['torchdiffeq', 'torchsde'],
+                        help='set the model type')
     parser.add_argument('--interp', metavar="interp", type=str, default="cubic", choices=['cubic', 'linear'],
                         help='set the interpolation type')
     parser.add_argument('--loglevel', metavar="level", type=str, default="info",
@@ -78,11 +80,12 @@ def main():
     tst_array = (tst_array[0].cpu().numpy(), tst_array[1].cpu().numpy())
 
     logger.info(f'Using model type {opts["type"]}')
+    logger.info(f'Using solver type {opts["solver"]}')
     logger.info(f'Starting time series classification with maximum epochs of {opts["maxepochs"]}')
 
     (cde_model, log) = model.run_model(trn_array, val_array, model_type=opts["type"],
                     batch_size=opts["batchsize"], max_epochs=opts["maxepochs"], verbose=opts["verbose"],
-                    interpolation=opts["interp"], device = opts["device"])
+                    interpolation=opts["interp"], device = opts["device"], backend=opts["solver"])
 
     model.test_model(cde_model, log, trn_array, tst_array, id_list, output_name=opts["name"], model_type=opts["type"])
 
