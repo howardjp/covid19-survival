@@ -1,16 +1,16 @@
 import bz2
 import json
-import os
 
 import numpy
 import torch
+import torch.nn as nn
 import torchcde
 import torchtuples as tt
 
 from pycox.evaluation import EvalSurv
 from pycox.models import CoxCC, PCHazard, LogisticHazard, CoxPH, MTLR
 
-import c19ode
+import c19ode, loss, sdt
 from globals import logger
 
 
@@ -60,7 +60,7 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     num_durations = 10
     if model_type == 'pchazard':
         label_transform = PCHazard.label_transform(num_durations)
-    elif model_type == "logistic":
+    elif model_type == "logistic" or model_type == "sdt":
         label_transform = LogisticHazard.label_transform(num_durations)
     elif model_type == "mtlr":
         label_transform = MTLR.label_transform(num_durations)
@@ -85,11 +85,16 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
 
     learning_rate_tolerance = 4
     if model_type == 'pchazard':
-        model = PCHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
+        model = PCHazard(net, tt.optim.Adam, loss=loss.BrierLoss(), duration_index=label_transform.cuts)
+        #model = PCHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
     elif model_type == 'logistic':
         model = LogisticHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
     elif model_type == "mtlr":
         model = MTLR(net, tt.optim.Adam, duration_index=label_transform.cuts)
+    elif model_type == "sdt":
+        net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=input_channel_count, interpolation=interpolation, backend=backend)
+        sdt_net = nn.Sequential(net, sdt.SDT(input_dim=input_channel_count, output_dim=out_features))
+        model = sdt.SDTHazard(sdt_net, tt.optim.Adam, duration_index=label_transform.cuts)
     else:
         model = CoxPH(net, tt.optim.Adam)
         learning_rate_tolerance = 2

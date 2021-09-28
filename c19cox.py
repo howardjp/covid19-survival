@@ -25,7 +25,7 @@ def main():
                         default=pathlib.Path(tempfile.mktemp(suffix='', prefix='run-', dir=".")),
                         help="use name as output file base")
     parser.add_argument('--n', metavar="count", type=int, default=None, help='use count random patients for modeling, defaults to all available')
-    parser.add_argument('--type', metavar="type", type=str, default="coxcc", choices=['coxcc', 'pchazard', 'logistic', "mtlr"],
+    parser.add_argument('--type', metavar="type", type=str, default="coxcc", choices=['coxcc', 'pchazard', 'logistic', "mtlr", "sdt"],
                         help='set the model type')
     parser.add_argument('--solver', metavar="type", type=str, default="torchdiffeq", choices=['torchdiffeq', 'torchsde'],
                         help='set the model type')
