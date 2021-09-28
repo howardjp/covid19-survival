@@ -49,8 +49,10 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     if device == "cuda":
         logger.debug(f'Converting default tensor type to FloatTensor')
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
+        use_cuda = True
     else:
         torch.set_default_tensor_type('torch.FloatTensor')
+        use_cuda = False
 
     logger.debug("creating test tensor")
     _ = torch.Tensor([0, 1, 0, 1])
@@ -93,7 +95,7 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
         model = MTLR(net, tt.optim.Adam, duration_index=label_transform.cuts)
     elif model_type == "sdt":
         net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=input_channel_count, interpolation=interpolation, backend=backend)
-        sdt_net = nn.Sequential(net, sdt.SDT(input_dim=input_channel_count, output_dim=out_features))
+        sdt_net = nn.Sequential(net, sdt.SDT(input_dim=input_channel_count, output_dim=out_features, use_cuda = use_cuda))
         model = sdt.SDTHazard(sdt_net, tt.optim.Adam, duration_index=label_transform.cuts)
     else:
         model = CoxPH(net, tt.optim.Adam)
