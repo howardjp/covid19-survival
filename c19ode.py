@@ -2,7 +2,7 @@ import torch
 import torchcde
 
 class CDEFunc(torch.nn.Module):
-    def __init__(self, input_channels, hidden_channels):
+    def __init__(self, input_channels, hidden_channels, use_tanh=True):
         ######################
         # input_channels is the number of input channels in the data X. (Determined by the data.)
         # hidden_channels is the number of channels for z_t. (Determined by you!)
@@ -10,6 +10,7 @@ class CDEFunc(torch.nn.Module):
         super(CDEFunc, self).__init__()
         self.input_channels = input_channels
         self.hidden_channels = hidden_channels
+        self.use_tanh = use_tanh
 
         self.linear1 = torch.nn.Linear(hidden_channels, 64)
         self.linear2 = torch.nn.Linear(64, input_channels * hidden_channels)
@@ -26,7 +27,8 @@ class CDEFunc(torch.nn.Module):
         ######################
         # Easy-to-forget gotcha: Best results tend to be obtained by adding a final tanh nonlinearity.
         ######################
-        z = z.tanh()
+        if self.use_tanh == True:
+            z = z.tanh()
         ######################
         # Ignoring the batch dimension, the shape of the output tensor must be a matrix,
         # because we need it to represent a linear map from R^input_channels to R^hidden_channels.
@@ -39,10 +41,10 @@ class CDEFunc(torch.nn.Module):
 # Next, we need to package CDEFunc up into a model that computes the integral.
 ######################
 class NeuralCDE(torch.nn.Module):
-    def __init__(self, input_channels, hidden_channels, output_channels, interpolation="cubic", separate_time = False, backend="torchdiffeq"):
+    def __init__(self, input_channels, hidden_channels, output_channels, interpolation="cubic", separate_time = False, backend="torchdiffeq", use_tanh=True):
         super(NeuralCDE, self).__init__()
 
-        self.func = CDEFunc(input_channels, hidden_channels)
+        self.func = CDEFunc(input_channels, hidden_channels, use_tanh)
         self.initial = torch.nn.Linear(input_channels, hidden_channels)
         self.readout = torch.nn.Linear(hidden_channels, output_channels)
         self.interpolation = interpolation

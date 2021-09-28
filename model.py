@@ -87,14 +87,14 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
 
     learning_rate_tolerance = 4
     if model_type == 'pchazard':
-        model = PCHazard(net, tt.optim.Adam, loss=loss.BrierLoss(), duration_index=label_transform.cuts)
-        #model = PCHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
+        #model = PCHazard(net, tt.optim.Adam, loss=loss.BrierLoss(), duration_index=label_transform.cuts)
+        model = PCHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
     elif model_type == 'logistic':
         model = LogisticHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
     elif model_type == "mtlr":
         model = MTLR(net, tt.optim.Adam, duration_index=label_transform.cuts)
     elif model_type == "sdt":
-        net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=input_channel_count, interpolation=interpolation, backend=backend)
+        net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=input_channel_count, interpolation=interpolation, backend=backend, use_tanh=False)
         sdt_net = nn.Sequential(net, sdt.SDT(input_dim=input_channel_count, output_dim=out_features, use_cuda = use_cuda))
         model = sdt.SDTHazard(sdt_net, tt.optim.Adam, duration_index=label_transform.cuts)
     else:
