@@ -71,7 +71,7 @@ class NeuralCDE(torch.nn.Module):
         # {"dopri8", "dopri5", "bosh3", "fehlberg2", "adaptive_heun", "euler", "midpoint", "rk4", "explicit_adams", "implicit_adams", "fixed_adams", "scipy_solver"}.
         ######################
         step_size = (X.grid_points[1:] - X.grid_points[:-1]).min()
-        z_T = torchcde.cdeint(X=X, z0=z0, func=self.func, t=X.interval, adjoint=False, backend=self.backend, method='euler')
+        z_T = torchcde.cdeint(X=X, z0=z0, func=self.func, t=X.interval, adjoint=False, backend=self.backend, method='rk4')
 
         ######################
         # Both the initial value and the terminal value are returned from cdeint; extract just the terminal value,

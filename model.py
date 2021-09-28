@@ -40,7 +40,7 @@ def make_interp(trn_array, val_array, tst_array, interpolation="cubic"):
 
 
 def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epochs=10,
-              interpolation="cubic", verbose=False, device = "cpu", backend = "torchdiffeq"):
+              interpolation="cubic", verbose=False, device="cpu", backend="torchdiffeq"):
     x_trn_array, y_trn_array = trn_array
     x_val_array, y_val_array = val_array
 
@@ -78,36 +78,42 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     if interpolation == "linear":
         input_channel_count = x3
     else:
-        input_channel_count = int(x3/4)
+        input_channel_count = int(x3 / 4)
 
     val = tt.tuplefy(x_val_array, y_val_array)
 
     logger.debug(f'Creating neural CDE net')
-    net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=out_features, interpolation=interpolation, backend=backend)
+    net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=out_features,
+                           interpolation=interpolation, backend=backend)
 
     learning_rate_tolerance = 4
     if model_type == 'pchazard':
-        #model = PCHazard(net, tt.optim.Adam, loss=loss.BrierLoss(), duration_index=label_transform.cuts)
+        # model = PCHazard(net, tt.optim.Adam, loss=loss.BrierLoss(), duration_index=label_transform.cuts)
         model = PCHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
     elif model_type == 'logistic':
         model = LogisticHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
     elif model_type == "mtlr":
         model = MTLR(net, tt.optim.Adam, duration_index=label_transform.cuts)
     elif model_type == "sdt":
-        net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=input_channel_count, interpolation=interpolation, backend=backend, use_tanh=False)
-        sdt_net = nn.Sequential(net, sdt.SDT(input_dim=input_channel_count, output_dim=out_features, use_cuda = use_cuda))
+        net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64,
+                               output_channels=input_channel_count, interpolation=interpolation, backend=backend,
+                               use_tanh=False)
+        sdt_net = nn.Sequential(net,
+                                sdt.SDT(input_dim=input_channel_count, output_dim=out_features, use_cuda=use_cuda))
         model = sdt.SDTHazard(sdt_net, tt.optim.Adam, duration_index=label_transform.cuts)
     else:
         model = CoxPH(net, tt.optim.Adam)
         learning_rate_tolerance = 2
 
     logger.debug(f'Size of training data, x = {x_trn_array.shape} y = ({y_trn_array[0].shape}, {y_trn_array[1].shape})')
-    logger.debug(f'Size of validation data, x = {x_val_array.shape} y = ({y_val_array[0].shape}, {y_val_array[1].shape})')
+    logger.debug(
+        f'Size of validation data, x = {x_val_array.shape} y = ({y_val_array[0].shape}, {y_val_array[1].shape})')
 
     if device == "cuda":
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
     logger.debug(f'Starting search for optimal learning rate...')
-    learning_rate_finder = model.lr_finder(x_trn_array, y_trn_array, batch_size, tolerance=learning_rate_tolerance, shuffle=False)
+    learning_rate_finder = model.lr_finder(x_trn_array, y_trn_array, batch_size, tolerance=learning_rate_tolerance,
+                                           shuffle=False)
     best_lr = learning_rate_finder.get_best_lr()
     if best_lr > 0.01:
         logger.info(f"Best learning rate found is {best_lr}, using 0.01")
@@ -133,11 +139,11 @@ def test_model(model, log, trn_array, tst_array, id_list, output_name, model_typ
     output_name = str(output_name)
     model_info_file_name = output_name + ".json.bz2"
 
-    durations_tst = y_tst_array[:,0]
-    events_tst = y_tst_array[:,1]
+    durations_tst = y_tst_array[:, 0]
+    events_tst = y_tst_array[:, 1]
 
-    durations_trn = y_trn_array[:,0]
-    events_trn = y_trn_array[:,1]
+    durations_trn = y_trn_array[:, 0]
+    events_trn = y_trn_array[:, 1]
 
     if model_type == "coxcc":
         compute_baseline_hazards = True
