@@ -95,7 +95,7 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     elif model_type == "mtlr":
         model = MTLR(net, tt.optim.Adam, duration_index=label_transform.cuts)
     elif model_type == "sdt":
-        net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64,
+        net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=192,
                                output_channels=input_channel_count, interpolation=interpolation, backend=backend,
                                use_tanh=False)
         sdt_net = nn.Sequential(net,
