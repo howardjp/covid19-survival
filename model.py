@@ -8,7 +8,7 @@ import torchcde
 import torchtuples as tt
 
 from pycox.evaluation import EvalSurv
-from pycox.models import CoxCC, PCHazard, LogisticHazard, CoxPH, MTLR
+from pycox.models import CoxCC, PCHazard, LogisticHazard, CoxPH, MTLR, PMF
 
 import c19ode, loss, sdt
 from globals import logger
@@ -100,7 +100,7 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
                                use_tanh=False)
         sdt_net = nn.Sequential(net,
                                 sdt.SDT(input_dim=input_channel_count, output_dim=out_features, use_cuda=use_cuda))
-        model = sdt.SDTHazard(sdt_net, tt.optim.Adam, duration_index=label_transform.cuts)
+        model = PMF(sdt_net, tt.optim.Adam, duration_index=label_transform.cuts)
     else:
         model = CoxPH(net, tt.optim.Adam)
         learning_rate_tolerance = 2
