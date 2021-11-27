@@ -40,7 +40,7 @@ def make_interp(trn_array, val_array, tst_array, interpolation="cubic"):
 
 
 def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epochs=10,
-              interpolation="cubic", verbose=False, device="cpu", backend="torchdiffeq", lr = None):
+              interpolation="cubic", verbose=False, device="cpu", backend="torchdiffeq", lr = None, optim = "adam"):
     x_trn_array, y_trn_array = trn_array
     x_val_array, y_val_array = val_array
 
@@ -87,22 +87,31 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
                            interpolation=interpolation, backend=backend)
 
     learning_rate_tolerance = 4
+
+    if optim == 'rms':
+        optimizer = tt.optim.RMSprop
+    elif optim = 'sgd':
+        optimizer = tt.optim.SGD
+    else
+        optimizer = tt.optim.Adam
+
+
     if model_type == 'pchazard':
         # model = PCHazard(net, tt.optim.Adam, loss=loss.BrierLoss(), duration_index=label_transform.cuts)
-        model = PCHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
+        model = PCHazard(net, optimizer, duration_index=label_transform.cuts)
     elif model_type == 'logistic':
-        model = LogisticHazard(net, tt.optim.Adam, duration_index=label_transform.cuts)
+        model = LogisticHazard(net, optimizer, duration_index=label_transform.cuts)
     elif model_type == "mtlr":
-        model = MTLR(net, tt.optim.Adam, duration_index=label_transform.cuts)
+        model = MTLR(net, optimizer, duration_index=label_transform.cuts)
     elif model_type == "sdt":
         net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=192,
                                output_channels=input_channel_count, interpolation=interpolation, backend=backend,
                                use_tanh=False)
         sdt_net = nn.Sequential(net,
                                 sdt.SDT(input_dim=input_channel_count, output_dim=out_features, use_cuda=use_cuda))
-        model = PMF(sdt_net, tt.optim.Adam, duration_index=label_transform.cuts)
+        model = PMF(sdt_net, optimizer, duration_index=label_transform.cuts)
     else:
-        model = CoxPH(net, tt.optim.Adam)
+        model = CoxPH(net, optimizer)
         learning_rate_tolerance = 2
 
     logger.debug(f'Size of training data, x = {x_trn_array.shape} y = ({y_trn_array[0].shape}, {y_trn_array[1].shape})')
