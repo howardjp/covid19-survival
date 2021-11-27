@@ -38,7 +38,7 @@ def main():
                         help='set the maximum number of training epochs')
     parser.add_argument('--batchsize', metavar="size", type=int, default=32, help='set the batch size for training')
     parser.add_argument('--seed', metavar="seed", type=int, default=int(time.time()), help='set the random seed')
-    parser.add_argument('--lr', metavar="rate", type=int, default=None, help='set the learning rate')
+    parser.add_argument('--lr', metavar="rate", type=float, default=None, help='set the learning rate')
     parser.add_argument('--dataprep', action='store_true', default=False, help='run primary interpolation and save results')
     parser.add_argument('--verbose', action='store_true', default=False, help='set verbose output from the trainer')
     parser.add_argument('--version', action='store_true', default=False, help='display version information and quit')
