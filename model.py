@@ -92,7 +92,7 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
         optimizer = tt.optim.RMSprop
     elif optim == 'sgd':
         optimizer = tt.optim.SGD
-    else
+    else:
         optimizer = tt.optim.Adam
 
 
