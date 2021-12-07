@@ -27,6 +27,7 @@ def main():
     parser.add_argument('--n', metavar="count", type=int, default=None, help='use count random patients for modeling, defaults to all available')
     parser.add_argument('--type', metavar="type", type=str, default="coxcc", choices=['coxcc', 'pchazard', 'logistic', "mtlr", "sdt"],
                         help='set the model type')
+    parser.add_argument('--network', metavar="network", type=str, default="neuralcde", choices=['neuralcde', 'vanillamlp'], help='set the network type')
     parser.add_argument('--solver', metavar="type", type=str, default="torchdiffeq", choices=['torchdiffeq', 'torchsde'],
                         help='set the model type')
     parser.add_argument('--optim', metavar="optim", type=str, default="adam", choices=['adam', "adamw", "adamwr", "rms", "sgd"], help='set the optimizer')
@@ -88,7 +89,7 @@ def main():
     logger.info(f'Starting time series classification with maximum epochs of {opts["maxepochs"]}')
 
     (cde_model, log) = model.run_model(trn_array, val_array, model_type=opts["type"], num_durations=opts["durations"],
-                    batch_size=opts["batchsize"], max_epochs=opts["maxepochs"], verbose=opts["verbose"],
+                    batch_size=opts["batchsize"], max_epochs=opts["maxepochs"], verbose=opts["verbose"], network_type=opts["network"],
                     interpolation=opts["interp"], device = opts["device"], backend=opts["solver"], lr = opts["lr"],
                                        optim=opts["optim"], odesolver=opts["odesolver"])
 

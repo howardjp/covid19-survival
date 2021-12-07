@@ -39,7 +39,7 @@ def make_interp(trn_array, val_array, tst_array, interpolation="cubic"):
     return (x_trn_array, y_trn_array), (x_val_array, y_val_array), (x_tst_array, y_tst_array),
 
 
-def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epochs=10, num_durations = 10,
+def run_model(trn_array, val_array, model_type="coxcc", network_type="neuralcde", batch_size=256, max_epochs=10, num_durations = 10,
               interpolation="cubic", verbose=False, device="cpu", backend="torchdiffeq", lr = None, optim = "adam", odesolver="rk4"):
     x_trn_array, y_trn_array = trn_array
     x_val_array, y_val_array = val_array
@@ -81,9 +81,16 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
 
     val = tt.tuplefy(x_val_array, y_val_array)
 
-    logger.debug(f'Creating neural CDE net')
-    net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=out_features,
-                           interpolation=interpolation, backend=backend, odesolver=odesolver)
+    if network_type == 'neuralcde':
+        logger.debug(f'Creating neural CDE net')
+        net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=out_features,
+                               interpolation=interpolation, backend=backend, odesolver=odesolver)
+    elif network_type == "vanillamlp":
+        logger.debug("Creating vanilla MLP")
+        num_nodes = [32, 32]
+        batch_norm = True
+        dropout = None
+        net = tt.practical.MLPVanilla(input_channel_count, num_nodes, out_features, batch_norm, dropout)
 
     learning_rate_tolerance = 4
 
