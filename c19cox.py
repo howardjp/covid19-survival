@@ -40,6 +40,7 @@ def main():
                         help='set the maximum number of training epochs')
     parser.add_argument('--batchsize', metavar="size", type=int, default=32, help='set the batch size for training')
     parser.add_argument('--seed', metavar="seed", type=int, default=int(time.time()), help='set the random seed')
+    parser.add_argument('--durations', metavar="durations", type=int, default=10, help='set the potential durations count')
     parser.add_argument('--lr', metavar="rate", type=float, default=None, help='set the learning rate')
     parser.add_argument('--dataprep', action='store_true', default=False, help='run primary interpolation and save results')
     parser.add_argument('--verbose', action='store_true', default=False, help='set verbose output from the trainer')
@@ -86,7 +87,7 @@ def main():
     logger.info(f'Using solver type {opts["solver"]}')
     logger.info(f'Starting time series classification with maximum epochs of {opts["maxepochs"]}')
 
-    (cde_model, log) = model.run_model(trn_array, val_array, model_type=opts["type"],
+    (cde_model, log) = model.run_model(trn_array, val_array, model_type=opts["type"], num_durations=opts["durations"],
                     batch_size=opts["batchsize"], max_epochs=opts["maxepochs"], verbose=opts["verbose"],
                     interpolation=opts["interp"], device = opts["device"], backend=opts["solver"], lr = opts["lr"],
                                        optim=opts["optim"], odesolver=opts["odesolver"])

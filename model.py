@@ -39,7 +39,7 @@ def make_interp(trn_array, val_array, tst_array, interpolation="cubic"):
     return (x_trn_array, y_trn_array), (x_val_array, y_val_array), (x_tst_array, y_tst_array),
 
 
-def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epochs=10,
+def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epochs=10, num_durations = 10,
               interpolation="cubic", verbose=False, device="cpu", backend="torchdiffeq", lr = None, optim = "adam", odesolver="rk4"):
     x_trn_array, y_trn_array = trn_array
     x_val_array, y_val_array = val_array
@@ -59,7 +59,6 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
     logger.debug(f'Adjusting labels, as appropriate')
     out_features = 1
     get_target = lambda df: (df[:, 0], df[:, 1])
-    num_durations = 10
     if model_type == 'pchazard':
         label_transform = PCHazard.label_transform(num_durations)
     elif model_type == "logistic" or model_type == "sdt":
