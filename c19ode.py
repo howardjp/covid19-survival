@@ -41,7 +41,7 @@ class CDEFunc(torch.nn.Module):
 # Next, we need to package CDEFunc up into a model that computes the integral.
 ######################
 class NeuralCDE(torch.nn.Module):
-    def __init__(self, input_channels, hidden_channels, output_channels, interpolation="cubic", separate_time = False, backend="torchdiffeq", use_tanh=True):
+    def __init__(self, input_channels, hidden_channels, output_channels, interpolation="cubic", separate_time = False, backend="torchdiffeq", use_tanh=True, odesolver="rk4"):
         super(NeuralCDE, self).__init__()
 
         self.func = CDEFunc(input_channels, hidden_channels, use_tanh)
@@ -50,6 +50,7 @@ class NeuralCDE(torch.nn.Module):
         self.interpolation = interpolation
         self.separate_time = separate_time
         self.backend = backend
+        self.odesolver = odesolver
 
     def forward(self, coeffs):
         if self.interpolation == 'cubic':
@@ -71,7 +72,7 @@ class NeuralCDE(torch.nn.Module):
         # {"dopri8", "dopri5", "bosh3", "fehlberg2", "adaptive_heun", "euler", "midpoint", "rk4", "explicit_adams", "implicit_adams", "fixed_adams", "scipy_solver"}.
         ######################
         step_size = (X.grid_points[1:] - X.grid_points[:-1]).min()
-        z_T = torchcde.cdeint(X=X, z0=z0, func=self.func, t=X.interval, adjoint=False, backend=self.backend, method='rk4')
+        z_T = torchcde.cdeint(X=X, z0=z0, func=self.func, t=X.interval, adjoint=False, backend=self.backend, method=self.odesolver)
 
         ######################
         # Both the initial value and the terminal value are returned from cdeint; extract just the terminal value,

@@ -40,7 +40,7 @@ def make_interp(trn_array, val_array, tst_array, interpolation="cubic"):
 
 
 def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epochs=10,
-              interpolation="cubic", verbose=False, device="cpu", backend="torchdiffeq", lr = None, optim = "adam"):
+              interpolation="cubic", verbose=False, device="cpu", backend="torchdiffeq", lr = None, optim = "adam", odesolver="rk4"):
     x_trn_array, y_trn_array = trn_array
     x_val_array, y_val_array = val_array
 
@@ -84,7 +84,7 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
 
     logger.debug(f'Creating neural CDE net')
     net = c19ode.NeuralCDE(input_channels=input_channel_count, hidden_channels=64, output_channels=out_features,
-                           interpolation=interpolation, backend=backend)
+                           interpolation=interpolation, backend=backend, odesolver=odesolver)
 
     learning_rate_tolerance = 4
 
@@ -92,9 +92,12 @@ def run_model(trn_array, val_array, model_type="coxcc", batch_size=256, max_epoc
         optimizer = tt.optim.RMSprop
     elif optim == 'sgd':
         optimizer = tt.optim.SGD
+    elif optim == 'adamwr':
+        optimizer = tt.optim.AdamWR
+    elif optim == 'adamw':
+        optimizer = tt.optim.AdamW
     else:
         optimizer = tt.optim.Adam
-
 
     if model_type == 'pchazard':
         # model = PCHazard(net, tt.optim.Adam, loss=loss.BrierLoss(), duration_index=label_transform.cuts)

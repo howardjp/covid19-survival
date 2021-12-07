@@ -29,7 +29,8 @@ def main():
                         help='set the model type')
     parser.add_argument('--solver', metavar="type", type=str, default="torchdiffeq", choices=['torchdiffeq', 'torchsde'],
                         help='set the model type')
-    parser.add_argument('--optim', metavar="optim", type=str, default="adam", choices=['adam', "rms", "sgd"], help='set the optimizer')
+    parser.add_argument('--optim', metavar="optim", type=str, default="adam", choices=['adam', "adamw", "adamwr", "rms", "sgd"], help='set the optimizer')
+    parser.add_argument('--odesolver', metavar="odesolver", type=str, default="rk4", choices=["dopri8", "dopri5", "bosh3", "fehlberg2", "adaptive_heun", "euler", "midpoint", "rk4", "explicit_adams", "implicit_adams", "fixed_adams", "scipy_solver"], help='set the ODE solver')
     parser.add_argument('--interp', metavar="interp", type=str, default="cubic", choices=['cubic', 'linear'],
                         help='set the interpolation type')
     parser.add_argument('--loglevel', metavar="level", type=str, default="info",
@@ -88,7 +89,7 @@ def main():
     (cde_model, log) = model.run_model(trn_array, val_array, model_type=opts["type"],
                     batch_size=opts["batchsize"], max_epochs=opts["maxepochs"], verbose=opts["verbose"],
                     interpolation=opts["interp"], device = opts["device"], backend=opts["solver"], lr = opts["lr"],
-                                       optim=opts["optim"])
+                                       optim=opts["optim"], odesolver=opts["odesolver"])
 
     model.test_model(cde_model, log, trn_array, tst_array, id_list, output_name=opts["name"], model_type=opts["type"])
 
